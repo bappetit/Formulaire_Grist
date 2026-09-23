@@ -117,7 +117,9 @@
         async function loadEvents() {
             try {
                 const response = await fetch(WORKER_URL);
-                const records = await response.json();
+                const data = await response.json();
+
+                const records = Array.isArray(data) ? data : (data.records || []);
                 
                 loader.style.display = 'none';
                 selectEvent.style.display = 'block';
