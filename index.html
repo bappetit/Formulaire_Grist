@@ -40,6 +40,15 @@
             window.stop();
         }
     })();
+
+    window.addEventListener("message", (event) => {
+      if (event.origin !== "https://eureka.univ-lehavre.fr") return;
+      if (event.data.userId) {
+        document.getElementById("student_id_input").value = event.data.userId;
+    }
+    });
+
+    
 </script>
 
 <div class="container">
@@ -51,6 +60,7 @@
                 <label for="nom">Nom :</label>
                 <input type="text" id="nom" required placeholder="DUPONT">
             </div>
+            <input id="student_id_input" name="student_id">
             <div class="form-group" style="flex: 1;">
                 <label for="prenom">Prénom :</label>
                 <input type="text" id="prenom" required placeholder="Jean">
@@ -168,7 +178,8 @@
                 email: document.getElementById('email').value,
                 choix: selectEvent.value,
                 annee: selectedAnnee,
-                composante: selectedComposante
+                composante: selectedComposante,
+                student_id: document.getElementById('student_id_input').value
             };
 
             try {
