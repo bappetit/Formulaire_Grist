@@ -39,10 +39,10 @@
         const urlParent = document.referrer;
         const siteAutorise = "https://eureka.univ-lehavre.fr";
         
-        //if (!estDansUneIframe || !urlParent.startsWith(siteAutorise)) {
-          //  document.body.innerHTML = `<div style="padding:20px;color:#721c24;background:#f8d7da;border:1px solid #f5c6cb;border-radius:5px;text-align:center;margin:30px auto;max-width:450px;"><h3>🛑 Accès non autorisé</h3><p>Ce formulaire ne peut être utilisé que depuis Eureka.</p></div>`;
-            //window.stop();
-        //}
+        if (!estDansUneIframe || !urlParent.startsWith(siteAutorise)) {
+            document.body.innerHTML = `<div style="padding:20px;color:#721c24;background:#f8d7da;border:1px solid #f5c6cb;border-radius:5px;text-align:center;margin:30px auto;max-width:450px;"><h3>🛑 Accès non autorisé</h3><p>Ce formulaire ne peut être utilisé que depuis Eureka.</p></div>`;
+            window.stop();
+        }
     })();
 </script>
 
