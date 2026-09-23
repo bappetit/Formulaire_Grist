@@ -12,6 +12,9 @@
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
         input[type="text"], input[type="email"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
         
+        /* Champ en lecture seule */
+        input[readonly] { background-color: #f0f0f0; color: #555; cursor: not-allowed; }
+
         /* Style Radio Buttons */
         .radio-group { display: flex; flex-wrap: wrap; gap: 10px; background: #f9f9f9; padding: 10px; border-radius: 4px; border: 1px solid #eee; }
         .radio-item { display: flex; align-items: center; font-size: 14px; cursor: pointer; }
@@ -30,25 +33,17 @@
 <body>
 
 <script>
-    // SÉCURITÉ : Vérification de l'hôte Eureka
+    // SÉCURITÉ : Vérification du contexte d'intégration
     (function() {
         const estDansUneIframe = (window.self !== window.top);
         const urlParent = document.referrer;
         const siteAutorise = "https://eureka.univ-lehavre.fr";
+        
         if (!estDansUneIframe || !urlParent.startsWith(siteAutorise)) {
             document.body.innerHTML = `<div style="padding:20px;color:#721c24;background:#f8d7da;border:1px solid #f5c6cb;border-radius:5px;text-align:center;margin:30px auto;max-width:450px;"><h3>🛑 Accès non autorisé</h3><p>Ce formulaire ne peut être utilisé que depuis Eureka.</p></div>`;
             window.stop();
         }
     })();
-
-    window.addEventListener("message", (event) => {
-      if (event.origin !== "https://eureka.univ-lehavre.fr") return;
-      if (event.data.userId) {
-        document.getElementById("student_id_input").value = event.data.userId;
-    }
-    });
-
-    
 </script>
 
 <div class="container">
@@ -62,8 +57,8 @@
             </div>
             
             <div class="form-group" style="flex: 1;">
-                <label for="nom">Numéro :</label>
-                <input id="student_id_input" name="student_id">
+                <label for="student_id_input">Numéro ID :</label>
+                <input type="text" id="student_id_input" name="student_id">
             </div>
             
             <div class="form-group" style="flex: 1;">
@@ -128,7 +123,39 @@
 
         let descriptionsMap = {};
 
-        // 1. Charger les événements au démarrage
+        // 1. Récupération des paramètres transmis par l'URL Moodle
+        function getUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            const userId = urlParams.get('userId') || urlParams.get('userid') || '';
+            const nom = urlParams.get('nom') || urlParams.get('lastname') || '';
+            const prenom = urlParams.get('prenom') || urlParams.get('firstname') || '';
+            const email = urlParams.get('email') || '';
+
+            // Remplir les champs si les valeurs existent
+            if (userId) {
+                const inputId = document.getElementById('student_id_input');
+                inputId.value = userId;
+                inputId.readOnly = true;
+            }
+            if (nom) {
+                const inputNom = document.getElementById('nom');
+                inputNom.value = nom;
+                inputNom.readOnly = true;
+            }
+            if (prenom) {
+                const inputPrenom = document.getElementById('prenom');
+                inputPrenom.value = prenom;
+                inputPrenom.readOnly = true;
+            }
+            if (email) {
+                const inputEmail = document.getElementById('email');
+                inputEmail.value = email;
+                inputEmail.readOnly = true;
+            }
+        }
+
+        // 2. Charger les événements au démarrage
         async function loadEvents() {
             try {
                 const response = await fetch(WORKER_URL);
@@ -158,7 +185,7 @@
             }
         }
 
-        // 2. Gérer l'affichage de la description
+        // 3. Gérer l'affichage de la description
         selectEvent.addEventListener('change', function() {
             const selectedName = selectEvent.value;
             if (selectedName && descriptionsMap[selectedName]) {
@@ -169,7 +196,7 @@
             }
         });
 
-        // 3. Envoi du formulaire (sans numEtudiant)
+        // 4. Envoi du formulaire
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             messageDiv.style.display = "none";
@@ -202,6 +229,9 @@
                     messageDiv.style.color = "#155724";
                     messageDiv.style.display = "block";
                     form.reset();
+                    
+                    // Re-remplir les données Moodle verrouillées après le reset
+                    getUrlParams(); 
                     descBox.style.display = 'none';
                 } else {
                     throw new Error(result.error || "Erreur lors de l'envoi.");
@@ -214,6 +244,8 @@
             }
         });
 
+        // Initialisation
+        getUrlParams();
         loadEvents();
     })();
 </script>
