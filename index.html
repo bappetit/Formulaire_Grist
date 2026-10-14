@@ -170,6 +170,7 @@
                     const name_event = f.titre;
                     const desc_event = f.description || "Aucune description disponible.";
                     const date_event = f.date || "Plus de date disponible"; 
+                    const complet_event = f.complet; 
                     const recordId = record.id; 
 
                     if (name_event) {
@@ -179,9 +180,11 @@
                                 creneaux: []
                             }; 
                         }
-                        eventsData[name_event].creneaux.push({
+                        if (!complet){
+                            eventsData[name_event].creneaux.push({
                             id: recordId, 
                             date: date_event
+                            }
                         });
                     }
                 }); 
