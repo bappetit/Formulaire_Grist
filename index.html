@@ -169,15 +169,9 @@
                     const f = record.fields;
                     const name_event = f.titre;
                     const desc_event = f.description || "Aucune description disponible.";
-                    const date_event = f.date || "Plus de date disponible"; 
+                    const rawDate = f.date; // Le timestamp brut (ex: 1791990000)
                     const complet_event = f.complet; 
                     const recordId = record.id; 
-
-                    date_event = new Date(date_event *1000); 
-                    date_event = date_event.toLocaleString('fr-FR', {
-                        dateStyle: 'full', 
-                        timeStyle: 'short'
-                    }); 
 
                     if (name_event) {
                         if (!eventsData[name_event]) {
@@ -186,20 +180,34 @@
                                 creneaux: []
                             }; 
                         }
-                        if (!complet_event){
-                            eventsData[name_event].creneaux.push({
-                            id: recordId, 
-                            date: date_event
+
+                        if (!complet_event) {
+                            // Conversion propre du timestamp UNIX en date lisible française
+                            let dateFormatee = "Date à venir";
+                            if (rawDate) {
+                                const d = new Date(rawDate * 1000); // JavaScript utilise les millisecondes
+                                dateFormatee = d.toLocaleString('fr-FR', {
+                                    dateStyle: 'full',
+                                    timeStyle: 'short'
+                                });
                             }
-                        });
+
+                            eventsData[name_event].creneaux.push({
+                                id: recordId, 
+                                date: dateFormatee
+                            });
+                        }
                     }
                 }); 
 
                 for (let nom in eventsData) {
-                    const opt = document.createElement('option');
-                    opt.value = nom;
-                    opt.textContent = nom;
-                    selectEvent.appendChild(opt);
+                    // On n'affiche que s'il reste des créneaux non complets
+                    if (eventsData[nom].creneaux.length > 0) {
+                        const opt = document.createElement('option');
+                        opt.value = nom;
+                        opt.textContent = nom;
+                        selectEvent.appendChild(opt);
+                    }
                 }
             } catch (err) {
                 loader.textContent = "Erreur de chargement des événements.";
