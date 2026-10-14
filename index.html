@@ -173,6 +173,12 @@
                     const complet_event = f.complet; 
                     const recordId = record.id; 
 
+                    date_event = new Date(date_event *1000); 
+                    date_event = date_event.toLocaleString('fr-FR', {
+                        dateStyle: 'full', 
+                        timeStyle: 'short'
+                    }); 
+
                     if (name_event) {
                         if (!eventsData[name_event]) {
                             eventsData[name_event] = {
