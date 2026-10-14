@@ -63,6 +63,11 @@
                 <label for="prenom">Prénom :</label>
                 <input type="text" id="prenom" required placeholder="Jean">
             </div>
+
+            <div class="form-group" style="flex: 1;">
+                <label for="prenom">numéro identification :</label>
+                <input type="text" id="num_id" required placeholder="Jean">
+            </div>
         </div>
 
         <div class="form-group">
@@ -129,11 +134,17 @@
             const nom = urlParams.get('nom') || urlParams.get('lastname') || '';
             const prenom = urlParams.get('prenom') || urlParams.get('firstname') || '';
             const email = urlParams.get('email') || '';
+            const num_id = urlParams.get('num_id') || '';
 
             // Remplir les champs si les valeurs existent
             if (userId) {
                 const inputId = document.getElementById('student_id_input');
                 inputId.value = userId;
+                inputId.readOnly = true;
+            }
+            if (num_id) {
+                const inputId = document.getElementById('num_id');
+                inputId.value = num_id;
                 inputId.readOnly = true;
             }
             if (nom) {
