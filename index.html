@@ -191,17 +191,14 @@
             e.preventDefault();
             messageDiv.style.display = "none";
 
-            const selectedAnnee = document.querySelector('input[name="annee"]:checked')?.value;
-            const selectedComposante = document.querySelector('input[name="composante"]:checked')?.value;
-
             const payload = {
                 nom: document.getElementById('nom').value,
                 prenom: document.getElementById('prenom').value,
                 email: document.getElementById('email').value,
                 choix: selectEvent.value,
-                annee: selectedAnnee,
-                composante: selectedComposante,
-                student_id: document.getElementById('student_id_input').value
+                annee: document.getElementById('annee').value,
+                composante: document.getElementById('composante').value,
+                num_id: document.getElementById('num_id').value
             };
 
             try {
