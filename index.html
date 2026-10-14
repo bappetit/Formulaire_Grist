@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inscription Eureka</title>
+    
     <style>
         body { font-family: sans-serif; background-color: transparent; margin: 0; padding: 10px; color: #333; }
         .container { max-width: 550px; margin: 0 auto; background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -51,63 +52,26 @@
     
     <form id="inscription-form">
         <div style="display: flex; gap: 10px;">
+
+            <input type="hidden" id="student_id_input" name="student_id">
+            <input type="hidden" id="num_id" name="num_id">
+            <input type="hidden" id="annee" name="annee">
+            <input type="hidden" id="composante" name="composante">
             
             <div class="form-group" style="flex: 1;">
                 <label for="nom">Nom :</label>
                 <input type="text" id="nom" required placeholder="DUPONT">
             </div>
-        
-            <input type="hidden" id="student_id_input" name="student_id">
             
             <div class="form-group" style="flex: 1;">
                 <label for="prenom">Prenom :</label>
                 <input type="text" id="prenom" required placeholder="Jean">
-            </div>
-
-            <div class="form-group" style="flex: 1;">
-                <label for="num_id">numéro identification :</label>
-                <input type="text" id="num_id" required placeholder="Jean">
-            </div>
-
-            <div class="form-group" style="flex: 1;">
-                <label for="annee">Annee :</label>
-                <input type="text" id="annee" required placeholder="Jean">
-            </div>
-
-            <div class="form-group" style="flex: 1;">
-                <label for="composante">Composante</label>
-                <input type="text" id="composante" required placeholder="Jean">
             </div>
         </div>
 
         <div class="form-group">
             <label for="email">Email Universitaire :</label>
             <input type="email" id="email" required placeholder="jean.dupont@univ-lehavre.fr">
-        </div>
-
-        <div class="form-group">
-            <label>Année d'étude :</label>
-            <div class="radio-group">
-                <label class="radio-item"><input type="radio" name="annee" value="L1" required> L1</label>
-                <label class="radio-item"><input type="radio" name="annee" value="L2"> L2</label>
-                <label class="radio-item"><input type="radio" name="annee" value="L3"> L3</label>
-                <label class="radio-item"><input type="radio" name="annee" value="BUT1"> BUT1</label>
-                <label class="radio-item"><input type="radio" name="annee" value="BUT2"> BUT2</label>
-                <label class="radio-item"><input type="radio" name="annee" value="BUT3"> BUT3</label>
-                <label class="radio-item"><input type="radio" name="annee" value="Master"> Master</label>
-                <label class="radio-item"><input type="radio" name="annee" value="Autre"> Autre</label>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label>Composante :</label>
-            <div class="radio-group">
-                <label class="radio-item"><input type="radio" name="composante" value="UFR ST" required> UFR ST</label>
-                <label class="radio-item"><input type="radio" name="composante" value="IUT"> IUT</label>
-                <label class="radio-item"><input type="radio" name="composante" value="UFR LSH"> UFR LSH</label>
-                <label class="radio-item"><input type="radio" name="composante" value="UFR Affaires Int."> UFR Affaires Int.</label>
-                <label class="radio-item"><input type="radio" name="composante" value="ISEL"> ISEL</label>
-            </div>
         </div>
 
         <div class="form-group">
@@ -139,8 +103,7 @@
         // 1. Récupération des paramètres transmis par l'URL Moodle
         function getUrlParams() {
             const urlParams = new URLSearchParams(window.location.search);
-            
-            const userId = urlParams.get('userId') || urlParams.get('userid') || '';
+
             const nom = urlParams.get('nom') || urlParams.get('lastname') || '';
             const prenom = urlParams.get('prenom') || urlParams.get('firstname') || '';
             const email = urlParams.get('email') || '';
@@ -149,11 +112,6 @@
             const composante = urlParams.get('composante') || '';
 
             // Remplir les champs si les valeurs existent
-            if (userId) {
-                const inputId = document.getElementById('student_id_input');
-                inputId.value = userId;
-                inputId.readOnly = true;
-            }
             if (num_id) {
                 const inputId = document.getElementById('num_id');
                 inputId.value = num_id;
