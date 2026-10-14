@@ -175,12 +175,12 @@
                     if (name_event) {
                         if (!eventsData[name_event]) {
                             eventsData[name_event] = {
-                                description: desc, 
+                                description: desc_event, 
                                 creneaux: []
                             }; 
                         }
                         eventsData[name_event].creneaux.push({
-                            id: recordID, 
+                            id: recordId, 
                             date: date_event
                         });
                     }
@@ -212,7 +212,7 @@
                 eventsData[selectedName].creneaux.forEach(c => {
                     const opt = document.createElement('option'); 
                     opt.value = c.id; 
-                    opt.textContent = c.date_event; 
+                    opt.textContent = c.date; 
                     selectCreneau.appendChild(opt);
                 }); 
 
