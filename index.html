@@ -26,9 +26,15 @@
         
         .btn-submit { background-color: #0f6cbc; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; margin-top: 10px; }
         .btn-submit:hover { background-color: #0a4b83; }
+        .btn-submit:disabled { background-color: #8fb5d6; cursor: not-allowed; }
         
         #moodle-form-message { padding: 10px; border-radius: 4px; margin-top: 15px; display: none; font-weight: bold; text-align: center; }
         .loading { font-style: italic; color: #666; }
+
+        /* Récapitulatif d'inscription */
+        #recap { display: none; padding: 16px; background-color: #e7f3ff; border-left: 4px solid #0f6cbc; border-radius: 0 4px 4px 0; font-size: 14px; line-height: 1.5; }
+        #recap h4 { margin: 0 0 10px; color: #0f6cbc; font-size: 16px; }
+        #recap p { margin: 6px 0; }
     </style>
 </head>
 <body>
@@ -50,6 +56,9 @@
 
 <div class="container">
     <h3>Formulaire d'inscription</h3>
+
+    <!-- Récapitulatif (inscription confirmée ou déjà existante) -->
+    <div id="recap"></div>
     
     <form id="inscription-form">
         <div style="display: flex; gap: 10px;">
@@ -92,7 +101,7 @@
             <div id="event-description"></div>
         </div>
 
-        <button type="submit" class="btn-submit">Confirmer l'inscription</button>
+        <button type="submit" class="btn-submit" id="btn-submit">Confirmer l'inscription</button>
     </form>
 
     <div id="moodle-form-message"></div>
@@ -103,11 +112,57 @@
         const WORKER_URL = "https://workergrist.baptiste-petit.workers.dev/"; 
         const form = document.getElementById('inscription-form');
         const selectEvent = document.getElementById('evenement');
+        const selectCreneau = document.getElementById('creneau');
+        const creneauGroup = document.getElementById('creneau-group');
         const descBox = document.getElementById('event-description');
         const loader = document.getElementById('loader-events');
         const messageDiv = document.getElementById('moodle-form-message');
+        const recapBox = document.getElementById('recap');
+        const submitBtn = document.getElementById('btn-submit');
 
-        let descriptionsMap = {};
+        let eventsData = {}; // { "Nom de l'event": { description: "...", creneaux: [ {id, date}, ... ] } }
+
+        // Timestamp UNIX (secondes) -> date lisible en français
+        function formatDate(timestamp) {
+            if (!timestamp) return "Date à venir";
+            return new Date(timestamp * 1000).toLocaleString('fr-FR', {
+                dateStyle: 'full',
+                timeStyle: 'short',
+                timeZone: 'Europe/Paris'
+            });
+        }
+
+        function showMessage(text, success) {
+            messageDiv.textContent = text;
+            messageDiv.style.background = success ? "#d4edda" : "#f8d7da";
+            messageDiv.style.color = success ? "#155724" : "#721c24";
+            messageDiv.style.display = "block";
+        }
+
+        // Affiche le récapitulatif d'inscription à la place du formulaire
+        function showRecap(title, inscription, email) {
+            recapBox.replaceChildren();
+
+            const h = document.createElement('h4');
+            h.textContent = title;
+            recapBox.appendChild(h);
+
+            const addRow = (label, value) => {
+                const p = document.createElement('p');
+                const strong = document.createElement('strong');
+                strong.textContent = label + ' ';
+                p.append(strong, document.createTextNode(value));
+                recapBox.appendChild(p);
+            };
+
+            addRow('Événement :', inscription.titre);
+            addRow('Date :', formatDate(inscription.date));
+            if (email) addRow('Email :', email);
+
+            form.style.display = 'none';
+            messageDiv.style.display = 'none';
+            recapBox.style.display = 'block';
+        }
 
         // 1. Récupération des paramètres transmis par l'URL Moodle
         function getUrlParams() {
@@ -153,72 +208,68 @@
             }
         }
 
-        let eventsData = {}; // Structure : { "Nom de l'event": [ {id: 1, date: "...", description: "..."}, ... ] }
-        
-        // 2. Charger les événements au démarrage
+        // 2. Charger les événements (déjà filtrés par le worker : ni complets, ni passés)
         async function loadEvents() {
+            loader.textContent = "Chargement des événements...";
+            loader.style.display = 'block';
+            selectEvent.style.display = 'none';
+
             try {
-                const response = await fetch(WORKER_URL);
+                const email = document.getElementById('email').value.trim();
+                const url = email ? `${WORKER_URL}?email=${encodeURIComponent(email)}` : WORKER_URL;
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Réponse invalide du serveur");
                 const data = await response.json();
-                const records = Array.isArray(data) ? data : (data.records || []);
-                
+
+                // Déjà inscrit : on affiche directement le récapitulatif
+                if (data.inscription) {
+                    showRecap("Vous êtes déjà inscrit(e)", data.inscription, email);
+                    return;
+                }
+
+                // Reconstruction de la liste
+                eventsData = {};
+                (data.events || []).forEach(ev => {
+                    if (!ev.titre) return;
+                    if (!eventsData[ev.titre]) {
+                        eventsData[ev.titre] = {
+                            description: ev.description || "Aucune description disponible.",
+                            creneaux: []
+                        };
+                    }
+                    eventsData[ev.titre].creneaux.push({ id: ev.id, date: formatDate(ev.date) });
+                });
+
+                selectEvent.innerHTML = '<option value="">-- Choisir un événement --</option>';
+                selectCreneau.innerHTML = '<option value="">-- Choisir un créneau --</option>';
+                creneauGroup.style.display = 'none';
+                descBox.style.display = 'none';
+
+                const noms = Object.keys(eventsData);
+                if (noms.length === 0) {
+                    loader.textContent = "Aucun événement disponible pour le moment.";
+                    return;
+                }
+
+                noms.forEach(nom => {
+                    const opt = document.createElement('option');
+                    opt.value = nom;
+                    opt.textContent = nom;
+                    selectEvent.appendChild(opt);
+                });
+
                 loader.style.display = 'none';
                 selectEvent.style.display = 'block';
-
-                records.forEach(record => {
-                    const f = record.fields;
-                    const name_event = f.titre;
-                    const desc_event = f.description || "Aucune description disponible.";
-                    const rawDate = f.date; // Le timestamp brut (ex: 1791990000)
-                    const complet_event = f.complet; 
-                    const recordId = record.id; 
-
-                    if (name_event) {
-                        if (!eventsData[name_event]) {
-                            eventsData[name_event] = {
-                                description: desc_event, 
-                                creneaux: []
-                            }; 
-                        }
-
-                        if (!complet_event) {
-                            // Conversion propre du timestamp UNIX en date lisible française
-                            let dateFormatee = "Date à venir";
-                            if (rawDate) {
-                                const d = new Date(rawDate * 1000); // JavaScript utilise les millisecondes
-                                dateFormatee = d.toLocaleString('fr-FR', {
-                                    dateStyle: 'full',
-                                    timeStyle: 'short'
-                                });
-                            }
-
-                            eventsData[name_event].creneaux.push({
-                                id: recordId, 
-                                date: dateFormatee
-                            });
-                        }
-                    }
-                }); 
-
-                for (let nom in eventsData) {
-                    // On n'affiche que s'il reste des créneaux non complets
-                    if (eventsData[nom].creneaux.length > 0) {
-                        const opt = document.createElement('option');
-                        opt.value = nom;
-                        opt.textContent = nom;
-                        selectEvent.appendChild(opt);
-                    }
-                }
             } catch (err) {
                 loader.textContent = "Erreur de chargement des événements.";
                 console.error(err);
             }
         }
-        // 3. Gérer l'affichage de la description
+
+        // 3. Gérer l'affichage de la description et des créneaux
         selectEvent.addEventListener('change', function() {
             const selectedName = selectEvent.value;
-            const creneauGroup = document.getElementById('creneau-group');
-            const selectCreneau = document.getElementById('creneau'); 
             
             selectCreneau.innerHTML = '<option value="">-- Choisir un créneau --</option>';
 
@@ -234,7 +285,6 @@
                 }); 
 
                 creneauGroup.style.display = 'block'; 
-                    
             } else {
                 descBox.style.display = 'none';
                 creneauGroup.style.display = 'none'; 
@@ -245,14 +295,13 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             messageDiv.style.display = "none";
-
-            const idCreneauChoisi = document.getElementById('creneau'); 
+            submitBtn.disabled = true;
 
             const payload = {
                 nom: document.getElementById('nom').value,
                 prenom: document.getElementById('prenom').value,
                 email: document.getElementById('email').value,
-                choix: idCreneauChoisi.value,
+                choix: selectCreneau.value,
                 annee: document.getElementById('annee').value,
                 composante: document.getElementById('composante').value,
                 num_id: document.getElementById('num_id').value
@@ -265,26 +314,32 @@
                     body: JSON.stringify(payload)
                 });
 
-                const result = await response.json();
+                const result = await response.json().catch(() => ({}));
 
+                // Succès
                 if (response.ok && result.success) {
-                    messageDiv.textContent = "✅ Inscription réussie !";
-                    messageDiv.style.background = "#d4edda";
-                    messageDiv.style.color = "#155724";
-                    messageDiv.style.display = "block";
-                    form.reset();
-                    
-                    // Re-remplir les données Moodle verrouillées après le reset
-                    getUrlParams(); 
-                    descBox.style.display = 'none';
-                } else {
-                    throw new Error(result.error || "Erreur lors de l'envoi.");
+                    showRecap("✅ Inscription confirmée", result.inscription, payload.email);
+                    return;
                 }
+
+                // Déjà inscrit (cas où l'email n'était pas fourni par Moodle)
+                if (result.code === 'ALREADY_REGISTERED' && result.inscription) {
+                    showRecap("Vous êtes déjà inscrit(e)", result.inscription, payload.email);
+                    return;
+                }
+
+                // Event rempli ou passé entre-temps : on rafraîchit la liste
+                if (result.code === 'EVENT_FULL' || result.code === 'EVENT_PAST') {
+                    await loadEvents();
+                    showMessage("❌ " + result.error, false);
+                    return;
+                }
+
+                throw new Error(result.error || "Erreur lors de l'envoi.");
             } catch (err) {
-                messageDiv.textContent = "❌ Erreur : " + err.message;
-                messageDiv.style.background = "#f8d7da";
-                messageDiv.style.color = "#721c24";
-                messageDiv.style.display = "block";
+                showMessage("❌ Erreur : " + err.message, false);
+            } finally {
+                submitBtn.disabled = false;
             }
         });
 
