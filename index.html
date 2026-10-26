@@ -62,8 +62,7 @@
     
     <form id="inscription-form">
         <div style="display: flex; gap: 10px;">
-
-            <input type="hidden" id="student_id_input" name="student_id">
+            
             <input type="hidden" id="num_id" name="num_id">
             <input type="hidden" id="annee" name="annee">
             <input type="hidden" id="composante" name="composante">
@@ -157,6 +156,7 @@
 
             addRow('Événement :', inscription.titre);
             addRow('Date :', formatDate(inscription.date));
+            addRow('Description :', inscription.description);
             if (email) addRow('Email :', email);
 
             form.style.display = 'none';
@@ -324,7 +324,7 @@
 
                 // Déjà inscrit (cas où l'email n'était pas fourni par Moodle)
                 if (result.code === 'ALREADY_REGISTERED' && result.inscription) {
-                    showRecap("Vous êtes déjà inscrit(e)", result.inscription, payload.email);
+                    ("Vous êtes déjà inscrit(e)", result.inscription, payload.email);
                     return;
                 }
 
